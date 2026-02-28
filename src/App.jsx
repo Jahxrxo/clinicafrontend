@@ -6,6 +6,7 @@ import MedicoPanel from "./pages/MedicoPanel";
 import AuthPage from "./pages/AuthPage";
 import AdminPanel from "./pages/AdminPanel";
 import LandingPage from "./pages/LandingPage";
+import SecretariatPanel from "./pages/SecretariatPanel";
 
 
 function App() {
@@ -44,7 +45,16 @@ function App() {
               <AdminPanel />
             </PrivateRoute>
           }
-        /> 
+        />
+         {/*Rutas privadas para Secretaria */}
+        <Route
+          path="/secretaria/*"
+          element={
+            <PrivateRoute allowedRoles={["d2473fa6-10d2-493b-8dc7-51ce5252151a"]}>
+              <SecretariatPanel />
+            </PrivateRoute>
+          }
+        />
       </Routes>
     </Router>
   );

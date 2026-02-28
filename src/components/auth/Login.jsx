@@ -27,6 +27,9 @@ const Login = ({ hideTitle = false }) => {
                 case "5770e7d5-c449-4094-bbe1-fd52ee6fe75f":
                     navigate("/medico");
                     break;
+                case "d2473fa6-10d2-493b-8dc7-51ce5252151a":
+                    navigate("/secretaria");
+                    break;
                 default:
                     navigate("/login");
             }
@@ -60,6 +63,9 @@ const Login = ({ hideTitle = false }) => {
                     break;
                 case "5770e7d5-c449-4094-bbe1-fd52ee6fe75f":
                     navigate("/medico");
+                    break;
+                case "d2473fa6-10d2-493b-8dc7-51ce5252151a":
+                    navigate("/secretaria");
                     break;
                 default:
                     navigate("/login");
