@@ -148,8 +148,7 @@ const Register = ({ hideTitle = false }) => {
                     </div>
                     {passwordStrength && <small className="text-muted">Contraseña: {passwordStrength}</small>}
                 </div>
-
-
+{/* Eliminar el listbox del Rol y que por defecto sea paciente, leugo el adminsitrador decide que rol tendra ese usuario */}
                 <div className="d-flex gap-3">
                     <div className="mb-3 flex-grow-1">
                         <label className="form-label fw-bold" style={{ color: "var(--clr-dark)" }}>Rol</label>
@@ -163,6 +162,7 @@ const Register = ({ hideTitle = false }) => {
                             {rolesOptions.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
                         </select>
                     </div>
+                            {/* Hasta aqui esta el ROL */}
                     <div className="mb-3 flex-grow-1">
                         <label className="form-label fw-bold" style={{ color: "var(--clr-dark)" }}>Sucursal</label>
                         <select 
