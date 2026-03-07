@@ -11,9 +11,53 @@ const ScheduleAppointment = () => {
   const [fecha, setFecha] = useState("");
   const [hora, setHora] = useState("");
   const [disponibilidad, setDisponibilidad] = useState([]);
+  const [excepciones, setExcepciones] = useState([]);
   const [message, setMessage] = useState("");
+  const [warningMessage, setWarningMessage] = useState("");
 
   const backendUrl = "http://localhost:8000";
+
+  const formatFecha = (fechaIso) => {
+    const [y, m, d] = fechaIso.split("-");
+    return `${d}/${m}/${y}`;
+  };
+
+  const getFechaRegreso = (fechaFinIso) => {
+    const [y, m, d] = fechaFinIso.split("-").map(Number);
+    const regreso = new Date(y, m - 1, d + 1, 12, 0, 0);
+    return formatFecha(
+      `${regreso.getFullYear()}-${String(regreso.getMonth() + 1).padStart(
+        2,
+        "0"
+      )}-${String(regreso.getDate()).padStart(2, "0")}`
+    );
+  };
+
+  const getExcepcionParaFecha = (fechaIso) => {
+    if (!fechaIso) return null;
+    const objetivo = new Date(`${fechaIso}T12:00:00`);
+    return (
+      excepciones.find((exc) => {
+        if (!exc?.fecha_inicio || !exc?.fecha_fin) return false;
+        const inicio = new Date(`${exc.fecha_inicio}T12:00:00`);
+        const fin = new Date(`${exc.fecha_fin}T12:00:00`);
+        return objetivo >= inicio && objetivo <= fin;
+      }) || null
+    );
+  };
+
+  const buildNoDisponibleMsg = (exc) => {
+    const rango =
+      exc.fecha_inicio === exc.fecha_fin
+        ? `el ${formatFecha(exc.fecha_inicio)}`
+        : `del ${formatFecha(exc.fecha_inicio)} al ${formatFecha(
+            exc.fecha_fin
+          )}`;
+    const motivo = exc.motivo ? ` Motivo: ${exc.motivo}.` : "";
+    return `El médico no está disponible ${rango}.${motivo} Regresa a partir del ${getFechaRegreso(
+      exc.fecha_fin
+    )}.`;
+  };
 
   // Cargar médicos
   useEffect(() => {
@@ -22,17 +66,20 @@ const ScheduleAppointment = () => {
       .catch(err => console.error("Error al cargar médicos:", err));
   }, []);
 
-  // Al cambiar médico, cargar disponibilidad y sucursales
+  // Al cambiar médico, cargar disponibilidad, sucursales y excepciones
   useEffect(() => {
     if (!medico) {
       setDisponibilidad([]);
       setSucursales([]);
+      setExcepciones([]);
       setSucursal("");
       setFecha("");
       setHora("");
+      setWarningMessage("");
       return;
     }
 
+    // Cargar disponibilidad
     axios.get(`${backendUrl}/medicos/${medico}/disponibilidad`)
       .then(res => {
         setDisponibilidad(res.data);
@@ -53,10 +100,36 @@ const ScheduleAppointment = () => {
         setHora("");
       })
       .catch(err => console.error("Error al cargar disponibilidad:", err));
+
+    // Cargar excepciones del médico
+    axios.get(`${backendUrl}/medicos/${medico}/excepciones`)
+      .then(res => {
+        setExcepciones(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch(err => {
+        console.error("Error al cargar excepciones:", err);
+        setExcepciones([]);
+      });
   }, [medico]);
 
+  // Verificar excepción cuando cambia la fecha
+  useEffect(() => {
+    if (fecha && medico) {
+      const excepcion = getExcepcionParaFecha(fecha);
+      
+      if (excepcion) {
+        setWarningMessage(buildNoDisponibleMsg(excepcion));
+        setHora("");
+      } else {
+        setWarningMessage("");
+      }
+    } else {
+      setWarningMessage("");
+    }
+  }, [fecha, medico, excepciones]);
+
   // Filtrar horas disponibles según fecha y sucursal
-  const horasDisponibles = fecha && sucursal
+  const horasDisponibles = fecha && sucursal && !getExcepcionParaFecha(fecha)
     ? disponibilidad
         .filter(d => d.fecha === fecha && d.sucursal_id === sucursal)
         .flatMap(d => d.horas_disponibles)
@@ -68,6 +141,13 @@ const ScheduleAppointment = () => {
 
     if (!medico || !sucursal || !fecha || !hora) {
       setMessage("Debes completar todos los campos");
+      return;
+    }
+
+    // Validar que la fecha no sea una excepción
+    const excepcion = getExcepcionParaFecha(fecha);
+    if (excepcion) {
+      setMessage("No puedes agendar una cita en una fecha donde el médico no está disponible");
       return;
     }
 
@@ -88,6 +168,8 @@ const ScheduleAppointment = () => {
       setHora("");
       setDisponibilidad([]);
       setSucursales([]);
+      setExcepciones([]);
+      setWarningMessage("");
     } catch (err) {
       const errorMsg = err.response?.data?.error;
       if (errorMsg?.includes("no está disponible")) {
@@ -145,6 +227,11 @@ const ScheduleAppointment = () => {
             required
             min={new Date().toISOString().split("T")[0]}
           />
+          {warningMessage && (
+            <div className="alert alert-warning mt-2" role="alert">
+              ⚠️ {warningMessage}
+            </div>
+          )}
         </div>
 
         {/* Hora */}
@@ -155,6 +242,7 @@ const ScheduleAppointment = () => {
             value={hora}
             onChange={(e) => setHora(e.target.value)}
             required
+            disabled={!!warningMessage}
           >
             <option value="">Selecciona una hora</option>
             {horasDisponibles.length > 0
@@ -164,7 +252,13 @@ const ScheduleAppointment = () => {
           </select>
         </div>
 
-        <button type="submit" className="btn btn-primary">Agendar</button>
+        <button 
+          type="submit" 
+          className="btn btn-primary"
+          disabled={!!warningMessage}
+        >
+          Agendar
+        </button>
       </form>
 
       {message && <p className="mt-3 text-danger">{message}</p>}
