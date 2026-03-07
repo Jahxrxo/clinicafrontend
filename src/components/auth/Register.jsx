@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { AiOutlineEye, AiOutlineEyeInvisible } from "react-icons/ai";
@@ -24,10 +23,9 @@ const Register = ({ hideTitle = false }) => {
             try {
                 const res = await axios.get(`${backendUrl}/roles`);
                 setRolesOptions(res.data);
-                // Intenta seleccionar el primer rol, o el rol de 'paciente' si existe un identificador conocido
+                // Selecciona automáticamente el rol 'paciente' por defecto
                 const pacienteRol = res.data.find(r => r.nombre.toLowerCase() === 'paciente') || res.data[0];
                 if (pacienteRol) setRol(pacienteRol.id);
-
             } catch (err) { console.error(err); }
         };
         const fetchSucursales = async () => {
@@ -58,7 +56,7 @@ const Register = ({ hideTitle = false }) => {
         e.preventDefault();
         if (!emailValid) return setMessage("Correo inválido");
         if (password.length < 6) return setMessage("Contraseña mínima 6 caracteres");
-        if (!rol || !sucursal) return setMessage("Selecciona rol y sucursal"); 
+        if (!rol || !sucursal) return setMessage("Selecciona una sucursal"); 
 
         try {
             const formData = new FormData();
@@ -77,7 +75,8 @@ const Register = ({ hideTitle = false }) => {
             setMessage(res.data.message || "Usuario registrado exitosamente. Por favor, inicia sesión.");
             // Limpieza de campos
             setNombre(""); setEmail(""); setPassword(""); setTelefono("");
-            setRol(rolesOptions.length > 0 ? rolesOptions[0].id : "");
+            const pacienteRol = rolesOptions.find(r => r.nombre.toLowerCase() === 'paciente') || rolesOptions[0];
+            if (pacienteRol) setRol(pacienteRol.id);
             setSucursal(sucursalesOptions.length > 0 ? sucursalesOptions[0].id : "");
             setFoto(null); setPasswordStrength("");
         } catch (err) {
@@ -86,9 +85,7 @@ const Register = ({ hideTitle = false }) => {
     };
 
     return (
-        
         <div className="register-form-content"> 
-            
             <h2 className="text-center fw-bold mb-4" style={{ color: "var(--clr-secondary)" }}>
                 Registrarse
             </h2>
@@ -148,33 +145,19 @@ const Register = ({ hideTitle = false }) => {
                     </div>
                     {passwordStrength && <small className="text-muted">Contraseña: {passwordStrength}</small>}
                 </div>
-{/* Eliminar el listbox del Rol y que por defecto sea paciente, leugo el adminsitrador decide que rol tendra ese usuario */}
-                <div className="d-flex gap-3">
-                    <div className="mb-3 flex-grow-1">
-                        <label className="form-label fw-bold" style={{ color: "var(--clr-dark)" }}>Rol</label>
-                        <select 
-                            className="form-select" 
-                            value={rol} 
-                            onChange={(e) => setRol(e.target.value)} 
-                            required
-                            style={{ borderRadius: '8px', padding: '10px' }}
-                        >
-                            {rolesOptions.map((r) => <option key={r.id} value={r.id}>{r.nombre}</option>)}
-                        </select>
-                    </div>
-                            {/* Hasta aqui esta el ROL */}
-                    <div className="mb-3 flex-grow-1">
-                        <label className="form-label fw-bold" style={{ color: "var(--clr-dark)" }}>Sucursal</label>
-                        <select 
-                            className="form-select" 
-                            value={sucursal} 
-                            onChange={(e) => setSucursal(e.target.value)} 
-                            required
-                            style={{ borderRadius: '8px', padding: '10px' }}
-                        >
-                            {sucursalesOptions.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
-                        </select>
-                    </div>
+
+                {/* Sucursal */}
+                <div className="mb-3">
+                    <label className="form-label fw-bold" style={{ color: "var(--clr-dark)" }}>Sucursal</label>
+                    <select 
+                        className="form-select" 
+                        value={sucursal} 
+                        onChange={(e) => setSucursal(e.target.value)} 
+                        required
+                        style={{ borderRadius: '8px', padding: '10px' }}
+                    >
+                        {sucursalesOptions.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
+                    </select>
                 </div>
 
                 {/* Teléfono */}
