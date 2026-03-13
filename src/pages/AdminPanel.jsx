@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import AdminCitas from "../components/admin/AdminAppointments";
 import AdminPacientes from "../components/admin/AdminPatients";
 import AdminMedicos from "../components/admin/AdminMedicos";
+import AdminRoles from "../components/admin/AdminRoles";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import { Button } from "react-bootstrap";
@@ -275,179 +276,6 @@ const Dashboard = () => {
   );
 };
 
-/* ══════════ ROLES ══════════ */
-const AdminRoles = () => {
-  const [solicitudes, setSolicitudes] = useState(MOCK_SOLICITUDES_INIT);
-  const [modalOpen, setModalOpen]     = useState(false);
-  const [editando, setEditando]       = useState(null);
-  const [rolSelec, setRolSelec]       = useState("doctor");
-
-  const handleAccion = (id, nuevoEstado) =>
-    setSolicitudes(prev => prev.map(s => s.id===id ? {...s, estado:nuevoEstado} : s));
-
-  const abrirModal = (s) => { setEditando(s); setRolSelec(s.rolSolicitado); setModalOpen(true); };
-  const guardarRol = () => {
-    setSolicitudes(prev => prev.map(s => s.id===editando.id ? {...s, rolSolicitado:rolSelec, estado:"aprobado"} : s));
-    setModalOpen(false);
-  };
-
-  const pendientes = solicitudes.filter(s => s.estado==="pendiente");
-  const historial  = solicitudes.filter(s => s.estado!=="pendiente");
-
-  const Card = ({children, style={}}) => (
-    <div style={{ background:"#fff", borderRadius:12, padding:16, boxShadow:"0 4px 12px rgba(0,0,0,.07)", marginBottom:16, ...style }}>
-      {children}
-    </div>
-  );
-
-  return (
-    <div>
-      <Card>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <AlertCircle size={17} color="#e69d00"/>
-          <span style={{ fontWeight:700, color:"#022c30" }}>
-            Solicitudes pendientes&nbsp;
-            <span style={{ background:"#e69d0022", color:"#e69d00", borderRadius:50, padding:"1px 8px", fontSize:12 }}>{pendientes.length}</span>
-          </span>
-        </div>
-        {pendientes.length===0 && <p style={{ color:"#aaa", fontSize:13 }}>No hay solicitudes pendientes.</p>}
-        {pendientes.map(s => (
-          <motion.div key={s.id} layout
-            style={{ display:"flex", alignItems:"center", justifyContent:"space-between", flexWrap:"wrap", gap:8,
-                     background:"#f0fafa", borderRadius:10, padding:"10px 12px", marginBottom:8, border:"1px solid #e4f5f5" }}>
-            <div style={{ display:"flex", alignItems:"center", gap:10 }}>
-              <div style={{ width:36,height:36,borderRadius:"50%",background:"#0aa4a422",color:"#0aa4a4",
-                             display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700 }}>{s.nombre.charAt(0)}</div>
-              <div>
-                <div style={{ fontWeight:600, fontSize:13 }}>{s.nombre}</div>
-                <div style={{ fontSize:11, color:"#888" }}>{s.email}</div>
-              </div>
-              <span style={{ background:ROL_COLORS[s.rolSolicitado].bg, color:ROL_COLORS[s.rolSolicitado].color,
-                              borderRadius:50, padding:"2px 10px", fontSize:11, fontWeight:600 }}>
-                {ROL_LABELS[s.rolSolicitado]}
-              </span>
-            </div>
-            <div style={{ display:"flex", gap:6, flexWrap:"wrap" }}>
-              {[
-                { label:"Aprobar",    color:"#2dc48e", action:()=>handleAccion(s.id,"aprobado"),  icon:<CheckCircle size={13}/> },
-                { label:"Rechazar",   color:"#e05252", action:()=>handleAccion(s.id,"rechazado"), icon:<XCircle size={13}/> },
-                { label:"Asignar rol",color:"#0aa4a4", action:()=>abrirModal(s),                  icon:<UserCog size={13}/> },
-              ].map(b => (
-                <button key={b.label} onClick={b.action}
-                  style={{ display:"flex",alignItems:"center",gap:4,background:b.color+"22",color:b.color,
-                            border:`1.5px solid ${b.color}44`,borderRadius:50,padding:"4px 12px",fontSize:12,
-                            fontWeight:600,cursor:"pointer" }}>
-                  {b.icon}{b.label}
-                </button>
-              ))}
-            </div>
-          </motion.div>
-        ))}
-      </Card>
-
-      <Card>
-        <div style={{ display:"flex", alignItems:"center", gap:8, marginBottom:12 }}>
-          <ClipboardList size={17} color="#036b6b"/>
-          <span style={{ fontWeight:700, color:"#022c30" }}>Historial de asignaciones</span>
-        </div>
-        <div style={{ overflowX:"auto" }}>
-          <table style={{ width:"100%", borderCollapse:"collapse", fontSize:13 }}>
-            <thead>
-              <tr style={{ borderBottom:"2px solid #e4f5f5", color:"#036b6b" }}>
-                {["Usuario","Rol asignado","Estado","Acción"].map(h => (
-                  <th key={h} style={{ padding:"6px 8px", textAlign:"left", fontWeight:600 }}>{h}</th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              {historial.map(s => {
-                const ec = ESTADO_CONFIG[s.estado];
-                return (
-                  <tr key={s.id} style={{ borderBottom:"1px solid #f0fafa" }}>
-                    <td style={{ padding:"8px" }}>
-                      <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                        <div style={{ width:28,height:28,borderRadius:"50%",background:"#0aa4a422",color:"#0aa4a4",
-                                       display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:12 }}>{s.nombre.charAt(0)}</div>
-                        <div>
-                          <div style={{ fontWeight:600 }}>{s.nombre}</div>
-                          <div style={{ fontSize:11,color:"#aaa" }}>{s.email}</div>
-                        </div>
-                      </div>
-                    </td>
-                    <td style={{ padding:"8px" }}>
-                      <span style={{ background:ROL_COLORS[s.rolSolicitado].bg, color:ROL_COLORS[s.rolSolicitado].color,
-                                      borderRadius:50, padding:"2px 10px", fontSize:11, fontWeight:600 }}>
-                        {ROL_LABELS[s.rolSolicitado]}
-                      </span>
-                    </td>
-                    <td style={{ padding:"8px" }}>
-                      <span style={{ display:"flex",alignItems:"center",gap:4,color:ec.color,fontWeight:600 }}>
-                        {ec.icon}{ec.label}
-                      </span>
-                    </td>
-                    <td style={{ padding:"8px" }}>
-                      <button onClick={()=>abrirModal(s)}
-                        style={{ display:"flex",alignItems:"center",gap:4,background:"transparent",color:"#0aa4a4",
-                                  border:"1.5px solid #0aa4a4",borderRadius:50,padding:"4px 12px",fontSize:12,
-                                  fontWeight:600,cursor:"pointer" }}>
-                        <UserCog size={12}/>Cambiar rol
-                      </button>
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
-      </Card>
-
-      <AnimatePresence>
-        {modalOpen && editando && (
-          <motion.div
-            initial={{ opacity:0 }} animate={{ opacity:1 }} exit={{ opacity:0 }}
-            onClick={()=>setModalOpen(false)}
-            style={{ position:"fixed",inset:0,background:"rgba(2,44,48,.5)",zIndex:1000,
-                     display:"flex",alignItems:"center",justifyContent:"center",backdropFilter:"blur(4px)" }}>
-            <motion.div
-              initial={{ scale:.85,opacity:0 }} animate={{ scale:1,opacity:1 }} exit={{ scale:.85,opacity:0 }}
-              onClick={e=>e.stopPropagation()}
-              style={{ background:"#fff",borderRadius:16,padding:24,width:360,boxShadow:"0 20px 60px rgba(0,0,0,.2)" }}>
-              <div style={{ display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:12 }}>
-                <div style={{ display:"flex",alignItems:"center",gap:8,fontWeight:700,color:"#022c30" }}>
-                  <ShieldCheck size={16} color="#0aa4a4"/> Asignar rol
-                </div>
-                <button onClick={()=>setModalOpen(false)}
-                  style={{ background:"none",border:"none",cursor:"pointer",color:"#888" }}><X size={18}/></button>
-              </div>
-              <p style={{ fontSize:13,color:"#888",marginBottom:16 }}>Usuario: <strong style={{color:"#022c30"}}>{editando.nombre}</strong></p>
-              <div style={{ display:"flex",gap:10,marginBottom:20 }}>
-                {["doctor","secretaria"].map(rol => (
-                  <button key={rol} onClick={()=>setRolSelec(rol)}
-                    style={{ flex:1,padding:"14px 0",borderRadius:50,fontWeight:700,fontSize:14,cursor:"pointer",
-                              transition:"all .2s",
-                              background: rolSelec===rol ? ROL_COLORS[rol].color : ROL_COLORS[rol].bg,
-                              color: rolSelec===rol ? "#fff" : ROL_COLORS[rol].color,
-                              border:`2px solid ${ROL_COLORS[rol].color}` }}>
-                    {rol==="doctor" ? <Stethoscope size={15} style={{marginRight:6}}/> : <UserCheck size={15} style={{marginRight:6}}/>}
-                    {ROL_LABELS[rol]}
-                  </button>
-                ))}
-              </div>
-              <div style={{ display:"flex",gap:8 }}>
-                <button onClick={()=>setModalOpen(false)}
-                  style={{ flex:1,padding:"10px",borderRadius:50,border:"1.5px solid #036b6b",
-                            background:"transparent",color:"#036b6b",fontWeight:600,cursor:"pointer" }}>Cancelar</button>
-                <button onClick={guardarRol}
-                  style={{ flex:1,padding:"10px",borderRadius:50,border:"none",
-                            background:"#0aa4a4",color:"#fff",fontWeight:600,cursor:"pointer" }}>Guardar</button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-};
 
 /* ══════════ MAIN ══════════ */
 const NAV = [
@@ -460,10 +288,14 @@ const NAV = [
 const TITLES = { dashboard:"Dashboard", citas:"Gestión de Citas", pacientes:"Gestión de Pacientes", medicos:"Gestión de Médicos", roles:"Asignación de Roles" };
 
 export default function AdminPanel() {
+  const { user,logout } = useContext(AuthContext);  
+  const navigate = useNavigate();
   const [vista, setVista]         = useState("dashboard");
   const [sidebarOpen, setSidebar] = useState(true);
-  const user = { nombre: "Administrador" };
-
+  const handleLogout = () => {
+  logout();
+  navigate("/login");
+};
   const renderVista = () => {
     switch(vista) {
       case "dashboard":  return <Dashboard/>;
@@ -530,7 +362,7 @@ export default function AdminPanel() {
 
         <div style={{ borderTop:"1px solid rgba(255,255,255,.12)",marginTop:8,marginBottom:8 }}/>
 
-        <div onClick={()=>{}} title={!sidebarOpen?"Cerrar sesión":undefined}
+        <div onClick={handleLogout} title={!sidebarOpen?"Cerrar sesión":undefined}
           style={{ display:"flex",alignItems:"center",gap:10,padding:"10px",borderRadius:10,cursor:"pointer",
                     color:"rgba(255,255,255,.6)",transition:"all .2s",whiteSpace:"nowrap" }}
           onMouseEnter={e=>e.currentTarget.style.background="rgba(255,255,255,.08)"}
@@ -559,7 +391,9 @@ export default function AdminPanel() {
             <div style={{ width:36,height:36,borderRadius:"50%",background:"#0aa4a422",color:"#0aa4a4",
                            display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700 }}>A</div>
             <div>
-              <div style={{ fontWeight:600,fontSize:13,color:"#022c30" }}>{user.nombre}</div>
+              <div style={{ fontWeight: 600, fontSize: 13, color: "#022c30", lineHeight: 1.2 }}>
+                Admin {user?.nombre}
+              </div>
               <div style={{ fontSize:11,color:"#aaa" }}>Admin</div>
             </div>
           </div>
