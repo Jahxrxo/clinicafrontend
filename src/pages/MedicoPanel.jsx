@@ -4,24 +4,27 @@ import { AuthContext } from "../context/AuthContext";
 import MedicoUpcomingAppointments from "../components/medico/MedicoUpcomingAppointments";
 import MedicoHistoryAppointments from "../components/medico/MedicoHistoryAppointments";
 import MedicoExcepciones from "../components/medico/MedicoExcepciones";
+import MedicoReagendar from "../components/medico/MedicoReagendar";
 
 const NAV = [
-  { key: "pendientes",  label: "Citas Pendientes",  emoji: "📋" },
-  { key: "historial",   label: "Historial de Citas", emoji: "🗂️" },
-  { key: "excepciones", label: "Excepciones",        emoji: "⚙️" },
+  { key: "pendientes", label: "Citas Pendientes", emoji: "📋" },
+  { key: "reagendar", label: "Reagendar Citas", emoji: "📅" },
+  { key: "historial", label: "Historial de Citas", emoji: "🗂️" },
+  { key: "excepciones", label: "Excepciones", emoji: "⚙️" },
 ];
 
 const TITLES = {
-  pendientes:  "Citas Pendientes",
-  historial:   "Historial de Citas",
+  pendientes: "Citas Pendientes",
+  reagendar: "Reagendar Citas",
+  historial: "Historial de Citas",
   excepciones: "Excepciones",
 };
 
 export default function MedicoPanel() {
   const { user, logout } = useContext(AuthContext);
   const [vista, setVista] = useState("pendientes");
-  const [sb, setSb]       = useState(true);
-  const navigate          = useNavigate();
+  const [sb, setSb] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (!user) navigate("/login");
@@ -35,10 +38,11 @@ export default function MedicoPanel() {
   const renderVista = () => {
     if (!user) return null;
     switch (vista) {
-      case "pendientes":  return <MedicoUpcomingAppointments medicoId={user.id} />;
-      case "historial":   return <MedicoHistoryAppointments  medicoId={user.id} />;
-      case "excepciones": return <MedicoExcepciones          medicoId={user.id} />;
-      default:            return null;
+      case "pendientes": return <MedicoUpcomingAppointments medicoId={user.id} />;
+      case "reagendar": return <MedicoReagendar medicoId={user.id} />;
+      case "historial": return <MedicoHistoryAppointments medicoId={user.id} />;
+      case "excepciones": return <MedicoExcepciones medicoId={user.id} />;
+      default: return null;
     }
   };
 
