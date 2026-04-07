@@ -6,7 +6,7 @@ import AdminMedicos from "../components/admin/AdminMedicos";
 import AdminRoles from "../components/admin/AdminRoles";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
-import { Button } from "react-bootstrap";
+import { Button, Spinner } from "react-bootstrap";
 import axios from "axios";
 import { backendUrl } from "../services/api";
 import {
@@ -15,42 +15,6 @@ import {
   Clock, Activity, CheckCircle, XCircle,
   AlertCircle, Menu, X, UserCog, ClipboardList, UserCheck
 } from "lucide-react";
-
-const MOCK_PROXIMAS_CITAS = [
-  { id:1, paciente:"Pedro González",  hora:"08:30", medico:"Dr. Juan López",    tipo:"Consulta general", estado:"confirmada" },
-  { id:2, paciente:"Ana Martínez",    hora:"09:15", medico:"Dra. María Torres", tipo:"Pediatría",        estado:"confirmada" },
-  { id:3, paciente:"Carlos Pérez",    hora:"10:00", medico:"Dr. Juan López",    tipo:"Cardiología",      estado:"pendiente"  },
-  { id:4, paciente:"María Rodríguez", hora:"11:30", medico:"Dra. María Torres", tipo:"Control",          estado:"confirmada" },
-  { id:5, paciente:"José Alvarado",   hora:"12:00", medico:"Dr. Juan López",    tipo:"Urgencia",         estado:"cancelada"  },
-];
-
-const MOCK_ACTIVIDAD = [
-  { id:1, tipo:"cita",      msg:"Nueva cita agendada para Pedro González",       tiempo:"Hace 5 min",  icon:"calendar", color:"#0aa4a4" },
-  { id:2, tipo:"usuario",   msg:"Dr. Andrés Portillo aprobado como médico",      tiempo:"Hace 18 min", icon:"user",     color:"#2dc48e" },
-  { id:3, tipo:"cancelada", msg:"Cita de José Alvarado cancelada",                tiempo:"Hace 32 min", icon:"x",        color:"#e05252" },
-  { id:4, tipo:"paciente",  msg:"Nuevo paciente registrado: María Rodríguez",    tiempo:"Hace 1h",     icon:"plus",     color:"#ffae00" },
-  { id:5, tipo:"cita",      msg:"Cita de Carlos Pérez reprogramada",             tiempo:"Hace 1h 20m", icon:"clock",    color:"#036b6b" },
-  { id:6, tipo:"usuario",   msg:"Sofía Aguilar rechazada como secretaria",       tiempo:"Hace 2h",     icon:"shield",   color:"#e05252" },
-];
-
-const MOCK_SOLICITUDES_INIT = [
-  { id: 1, nombre: "Dra. Laura Méndez",  email: "lmendez@clinic.hn", rolSolicitado: "doctor",     estado: "pendiente" },
-  { id: 2, nombre: "Carlos Reyes",        email: "creyes@clinic.hn",  rolSolicitado: "secretaria", estado: "pendiente" },
-  { id: 3, nombre: "Dr. Andrés Portillo", email: "aportillo@med.hn",  rolSolicitado: "doctor",     estado: "aprobado"  },
-  { id: 4, nombre: "Sofía Aguilar",       email: "saguilar@clinic.hn",rolSolicitado: "secretaria", estado: "rechazado" },
-];
-
-const MOCK_DOCTORES = [
-  { id: 1, nombre: "Dr. Juan López",      especialidad: "Cardiología", estado: "activo",   pacientesAsig: 32 },
-  { id: 2, nombre: "Dra. María Torres",   especialidad: "Pediatría",   estado: "activo",   pacientesAsig: 28 },
-  { id: 3, nombre: "Dr. Roberto Sánchez", especialidad: "Neurología",  estado: "inactivo", pacientesAsig: 0  },
-];
-
-const MOCK_PACIENTES = [
-  { id: 1, nombre: "Pedro González", medico: "Dr. Juan López",    proxCita: "04 Mar 2026" },
-  { id: 2, nombre: "Ana Martínez",   medico: "Dra. María Torres", proxCita: "06 Mar 2026" },
-  { id: 3, nombre: "Luis Hernández", medico: "Sin asignar",        proxCita: "—"           },
-];
 
 const ROL_LABELS = { doctor: "Doctor", secretaria: "Secretaria" };
 const ROL_COLORS = {
@@ -97,6 +61,13 @@ const Dashboard = () => {
   });
   const [loadingStats, setLoadingStats] = useState(true);
 
+  const [doctores, setDoctores] = useState([]);
+  const [pacientes, setPacientes] = useState([]);
+  const [proximasCitas, setProximasCitas] = useState([]);
+  const [actividad, setActividad] = useState([]);
+  const [loadingDashboard, setLoadingDashboard] = useState(true);
+  const [errorDashboard, setErrorDashboard] = useState("");
+
   useEffect(() => {
     const fetchStats = async () => {
       try {
@@ -121,6 +92,55 @@ const Dashboard = () => {
       }
     };
     fetchStats();
+  }, []);
+
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setLoadingDashboard(true);
+        const [medicosRes, pacientesRes, citasRes] = await Promise.all([
+          axios.get(`${backendUrl}/medicos`),
+          axios.get(`${backendUrl}/pacientes`),
+          axios.get(`${backendUrl}/citas/todas`),
+        ]);
+
+        const medicosData = Array.isArray(medicosRes.data) ? medicosRes.data : (medicosRes.data ? medicosRes.data[Object.keys(medicosRes.data)[0]] || [] : []);
+        const pacientesData = Array.isArray(pacientesRes.data) ? pacientesRes.data : (pacientesRes.data ? pacientesRes.data[Object.keys(pacientesRes.data)[0]] || [] : []);
+        const citasData = Array.isArray(citasRes.data) ? citasRes.data : (citasRes.data ? citasRes.data[Object.keys(citasRes.data)[0]] || [] : []);
+
+        console.log('Pacientes response:', pacientesRes.data);
+        console.log('Pacientes data processed:', pacientesData);
+
+        setDoctores(medicosData);
+        setPacientes(pacientesData);
+
+        const proximas = citasData
+          .filter((c) => c.estado !== "cancelada")
+          .sort((a, b) => new Date(`${a.fecha} ${a.hora}`) - new Date(`${b.fecha} ${b.hora}`))
+          .slice(0, 5);
+        setProximasCitas(proximas);
+
+        const actividadData = citasData
+          .sort((a, b) => new Date(`${b.fecha} ${b.hora}`) - new Date(`${a.fecha} ${a.hora}`))
+          .slice(0, 6)
+          .map((c) => ({
+            id: c.id,
+            tipo: c.estado === "cancelada" ? "cancelada" : "cita",
+            msg: `Cita ${c.estado} para ${c.paciente || c.nombre || "Paciente"} con ${c.medico || "Médico"}`,
+            tiempo: c.fecha || "Reciente",
+            icon: c.estado === "cancelada" ? "x" : "calendar",
+            color: c.estado === "cancelada" ? "#e05252" : "#0aa4a4",
+          }));
+        setActividad(actividadData);
+      } catch (err) {
+        console.error("Error cargando dashboard:", err);
+        setErrorDashboard(err.response?.data?.error || err.message || "Error al cargar datos del dashboard");
+      } finally {
+        setLoadingDashboard(false);
+      }
+    };
+
+    fetchDashboardData();
   }, []);
 
   const statCards = [
@@ -161,29 +181,36 @@ const Dashboard = () => {
             <Stethoscope size={17} color="#036b6b"/>
             <span style={{ fontWeight:700, color:"#022c30" }}>Médicos activos</span>
           </div>
-          {MOCK_DOCTORES.map(d => (
-            <div key={d.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                                      background:"#f0fafa", borderRadius:8, padding:"8px 10px", marginBottom:6 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <div style={{ width:34,height:34,borderRadius:"50%",background:"#0aa4a422",color:"#0aa4a4",
-                               display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14 }}>
-                  {d.nombre.charAt(4)}
-                </div>
-                <div>
-                  <div style={{ fontWeight:600, fontSize:13 }}>{d.nombre}</div>
-                  <div style={{ fontSize:11, color:"#888" }}>{d.especialidad}</div>
-                </div>
-              </div>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <span style={{ background: d.estado==="activo"?"#2dc48e22":"#e0525222",
-                                color: d.estado==="activo"?"#2dc48e":"#e05252",
-                                borderRadius:50, padding:"2px 8px", fontSize:11, fontWeight:600 }}>
-                  {d.estado}
-                </span>
-                <span style={{ fontSize:11, color:"#aaa" }}>{d.pacientesAsig} pac.</span>
-              </div>
+          {loadingDashboard ? (
+            <div style={{ textAlign:"center", padding:"20px" }}>
+              <Spinner animation="border" variant="info" />
+              <p style={{ marginTop:10, color:"#888" }}>Cargando médicos...</p>
             </div>
-          ))}
+          ) : (
+            doctores.map(d => (
+              <div key={d.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                                        background:"#f0fafa", borderRadius:8, padding:"8px 10px", marginBottom:6 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ width:34,height:34,borderRadius:"50%",background:"#0aa4a422",color:"#0aa4a4",
+                                 display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14 }}>
+                    {(d.nombre || d.name || "M").charAt(0)}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:13 }}>{d.nombre || d.name || "Sin nombre"}</div>
+                    <div style={{ fontSize:11, color:"#888" }}>{d.especialidad || d.specialty || "-"}</div>
+                  </div>
+                </div>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <span style={{ background: d.estado==="activo"?"#2dc48e22":"#e0525222",
+                                  color: d.estado==="activo"?"#2dc48e":"#e05252",
+                                  borderRadius:50, padding:"2px 8px", fontSize:11, fontWeight:600 }}>
+                    {d.estado || "-"}
+                  </span>
+                  <span style={{ fontSize:11, color:"#aaa" }}>{d.pacientesAsig ?? d.patientsCount ?? 0} pac.</span>
+                </div>
+              </div>
+            ))
+          )}
         </div>
 
         <div style={{ background:"#fff", borderRadius:12, padding:16, boxShadow:"0 4px 12px rgba(0,0,0,.07)" }}>
@@ -191,22 +218,37 @@ const Dashboard = () => {
             <Users size={17} color="#0aa4a4"/>
             <span style={{ fontWeight:700, color:"#022c30" }}>Pacientes recientes</span>
           </div>
-          {MOCK_PACIENTES.map(p => (
-            <div key={p.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
-                                      background:"#f0fafa", borderRadius:8, padding:"8px 10px", marginBottom:6 }}>
-              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
-                <div style={{ width:34,height:34,borderRadius:"50%",background:"#ffae0022",color:"#ffae00",
-                               display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14 }}>
-                  {p.nombre.charAt(0)}
-                </div>
-                <div>
-                  <div style={{ fontWeight:600, fontSize:13 }}>{p.nombre}</div>
-                  <div style={{ fontSize:11, color:"#888" }}>{p.medico}</div>
-                </div>
-              </div>
-              <span style={{ fontSize:11, color:"#aaa" }}>{p.proxCita}</span>
+          {loadingDashboard ? (
+            <div style={{ textAlign:"center", padding:"20px" }}>
+              <Spinner animation="border" variant="success" />
+              <p style={{ marginTop:10, color:"#888" }}>Cargando pacientes...</p>
             </div>
-          ))}
+          ) : errorDashboard ? (
+            <div style={{ textAlign:"center", padding:"20px" }}>
+              <p style={{ color:"#e05252", fontSize:14 }}>Error: {errorDashboard}</p>
+            </div>
+          ) : pacientes.length === 0 ? (
+            <div style={{ textAlign:"center", padding:"20px" }}>
+              <p style={{ color:"#888", fontSize:14 }}>No hay pacientes registrados</p>
+            </div>
+          ) : (
+            pacientes.map(p => (
+              <div key={p.id} style={{ display:"flex", alignItems:"center", justifyContent:"space-between",
+                                        background:"#f0fafa", borderRadius:8, padding:"8px 10px", marginBottom:6 }}>
+                <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                  <div style={{ width:34,height:34,borderRadius:"50%",background:"#ffae0022",color:"#ffae00",
+                                 display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700,fontSize:14 }}>
+                    {(p.nombre || p.name || "P").charAt(0)}
+                  </div>
+                  <div>
+                    <div style={{ fontWeight:600, fontSize:13 }}>{p.nombre || p.name || "Sin nombre"}</div>
+                     {/* <div style={{ fontSize:11, color:"#888" }}>{p.medico || p.doctor || "Sin médico"}</div> */}
+                  </div>
+                </div>
+                <span style={{ fontSize:11, color:"#aaa" }}>{p.proxCita || p.nextAppointment || "-"}</span>
+              </div>
+            ))
+          )}
         </div>
       </div>
 
@@ -224,27 +266,34 @@ const Dashboard = () => {
               Hoy
             </span>
           </div>
-          {MOCK_PROXIMAS_CITAS.map((c, i) => {
-            const ec = ESTADO_CITA_CONFIG[c.estado];
-            return (
-              <motion.div key={c.id}
-                initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }} transition={{ delay: 0.28 + i*0.06 }}
-                style={{ display:"flex", alignItems:"center", gap:10,
-                          background:"#f0fafa", borderRadius:10, padding:"9px 12px", marginBottom:7,
-                          borderLeft:`3px solid ${ec.color}` }}>
-                <div style={{ minWidth:38, textAlign:"center" }}>
-                  <div style={{ fontWeight:800, fontSize:13, color:"#022c30" }}>{c.hora}</div>
-                </div>
-                <div style={{ flex:1, minWidth:0 }}>
-                  <div style={{ fontWeight:600, fontSize:13, color:"#022c30", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.paciente}</div>
-                  <div style={{ fontSize:11, color:"#888" }}>{c.medico} · {c.tipo}</div>
-                </div>
-                <span style={{ background:ec.bg, color:ec.color, borderRadius:50, padding:"2px 8px", fontSize:10, fontWeight:700, whiteSpace:"nowrap" }}>
-                  {ec.label}
-                </span>
-              </motion.div>
-            );
-          })}
+          {loadingDashboard ? (
+            <div style={{ textAlign:"center", padding:"20px" }}>
+              <Spinner animation="border" variant="warning" />
+              <p style={{ marginTop:10, color:"#888" }}>Cargando citas...</p>
+            </div>
+          ) : (
+            proximasCitas.map((c, i) => {
+              const ec = ESTADO_CITA_CONFIG[c.estado] || ESTADO_CITA_CONFIG.pendiente;
+              return (
+                <motion.div key={c.id || i}
+                  initial={{ opacity:0, x:-10 }} animate={{ opacity:1, x:0 }} transition={{ delay: 0.28 + i*0.06 }}
+                  style={{ display:"flex", alignItems:"center", gap:10,
+                            background:"#f0fafa", borderRadius:10, padding:"9px 12px", marginBottom:7,
+                            borderLeft:`3px solid ${ec.color}` }}>
+                  <div style={{ minWidth:38, textAlign:"center" }}>
+                    <div style={{ fontWeight:800, fontSize:13, color:"#022c30" }}>{c.hora || "--:--"}</div>
+                  </div>
+                  <div style={{ flex:1, minWidth:0 }}>
+                    <div style={{ fontWeight:600, fontSize:13, color:"#022c30", whiteSpace:"nowrap", overflow:"hidden", textOverflow:"ellipsis" }}>{c.paciente || c.nombre_paciente || "Paciente"}</div>
+                    <div style={{ fontSize:11, color:"#888" }}>{c.medico || c.nombre_medico || "Médico"} · {c.tipo || c.servicio || "Consulta"}</div>
+                  </div>
+                  <span style={{ background:ec.bg, color:ec.color, borderRadius:50, padding:"2px 8px", fontSize:10, fontWeight:700, whiteSpace:"nowrap" }}>
+                    {ec.label}
+                  </span>
+                </motion.div>
+              );
+            })
+          )}
         </motion.div>
 
         <motion.div initial={{ opacity:0, y:16 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.3 }}
@@ -255,19 +304,26 @@ const Dashboard = () => {
           </div>
           <div style={{ position:"relative" }}>
             <div style={{ position:"absolute", left:14, top:0, bottom:0, width:2, background:"#e4f5f5", borderRadius:2 }}/>
-            {MOCK_ACTIVIDAD.map((a, i) => (
-              <motion.div key={a.id}
-                initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} transition={{ delay: 0.32 + i*0.06 }}
-                style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:12, position:"relative" }}>
-                <div style={{ zIndex:1, flexShrink:0 }}>
-                  <ActividadIcon tipo={a.icon} color={a.color}/>
-                </div>
-                <div style={{ flex:1, paddingTop:3 }}>
-                  <div style={{ fontSize:12, color:"#022c30", fontWeight:500, lineHeight:1.4 }}>{a.msg}</div>
-                  <div style={{ fontSize:11, color:"#aaa", marginTop:2 }}>{a.tiempo}</div>
-                </div>
-              </motion.div>
-            ))}
+            {loadingDashboard ? (
+              <div style={{ textAlign:"center", padding:"20px" }}>
+                <Spinner animation="border" variant="info" />
+                <p style={{ marginTop:10, color:"#888" }}>Cargando actividad...</p>
+              </div>
+            ) : (
+              actividad.map((a, i) => (
+                <motion.div key={a.id || i}
+                  initial={{ opacity:0, x:10 }} animate={{ opacity:1, x:0 }} transition={{ delay: 0.32 + i*0.06 }}
+                  style={{ display:"flex", alignItems:"flex-start", gap:10, marginBottom:12, position:"relative" }}>
+                  <div style={{ zIndex:1, flexShrink:0 }}>
+                    <ActividadIcon tipo={a.icon} color={a.color}/>
+                  </div>
+                  <div style={{ flex:1, paddingTop:3 }}>
+                    <div style={{ fontSize:12, color:"#022c30", fontWeight:500, lineHeight:1.4 }}>{a.msg}</div>
+                    <div style={{ fontSize:11, color:"#aaa", marginTop:2 }}>{a.tiempo}</div>
+                  </div>
+                </motion.div>
+              ))
+            )}
           </div>
         </motion.div>
 

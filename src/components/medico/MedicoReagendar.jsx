@@ -3,6 +3,7 @@ import axios from "axios";
 import { backendUrl } from "../../services/api";
 
 /* HELPERS*/
+const ESTADOS_REAGENDABLES = ["pendiente", "confirmada"];
 const DIAS_ES = ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"];
 
 const formatFecha = (fechaStr) => {
@@ -360,8 +361,7 @@ const MedicoReagendar = ({ medicoId }) => {
           axios.get(`${backendUrl}/citas/medico/${medicoId}`),
           axios.get(`${backendUrl}/medicos/${medicoId}/excepciones`),
         ]);
-        // Solo citas pendientes
-        setCitas((citasRes.data || []).filter((c) => c.estado === "pendiente"));
+        setCitas((citasRes.data || []).filter((c) => ESTADOS_REAGENDABLES.includes(c.estado)));
         setExcepciones(excRes.data || []);
       } catch (err) {
         console.error(err);
@@ -389,7 +389,7 @@ const MedicoReagendar = ({ medicoId }) => {
         Reagendar Citas
       </h4>
       <p style={{ color: "#7a9a9a", fontSize: 13, marginBottom: 22 }}>
-        Selecciona una cita pendiente y elige un nuevo horario disponible.
+        Selecciona una cita pendiente o confirmada y elige un nuevo horario disponible.
       </p>
 
       {/* ── Banner de excepciones activas/futuras ── */}
@@ -465,13 +465,13 @@ const MedicoReagendar = ({ medicoId }) => {
           border: "1.5px dashed #c8e8e8",
         }}>
           <div style={{ fontSize: 42, marginBottom: 12 }}>📭</div>
-          <div style={{ fontWeight: 700, color: "#8aabab", marginBottom: 4 }}>Sin citas pendientes</div>
+          <div style={{ fontWeight: 700, color: "#8aabab", marginBottom: 4 }}>Sin citas activas</div>
           No tienes citas disponibles para reagendar.
         </div>
       ) : (
         <div>
           <div style={{ fontSize: 13, color: "#7a9a9a", marginBottom: 14 }}>
-            {citas.length} cita{citas.length !== 1 ? "s" : ""} pendiente{citas.length !== 1 ? "s" : ""}
+            {citas.length} cita{citas.length !== 1 ? "s" : ""} activa{citas.length !== 1 ? "s" : ""}
           </div>
           {citas.map((cita) => (
             <CitaCard

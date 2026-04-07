@@ -5,6 +5,12 @@ import axios from "axios";
 import { Modal, Button, Form, Spinner, Alert } from "react-bootstrap";
 import { backendUrl } from "../../services/api";
 
+const ESTADO_BADGE_CLASS = {
+  pendiente: "bg-warning text-dark",
+  confirmada: "bg-primary",
+  completada: "bg-success",
+  cancelada: "bg-danger",
+};
 
 const getMinDate = () => {
   const today = new Date();
@@ -189,6 +195,21 @@ const AdminAppointments = () => {
     }
   };
 
+  const handleConfirm = async (citaId) => {
+    if (!window.confirm("¿Marcar esta cita como confirmada?")) return;
+    try {
+      await axios.patch(`${backendUrl}/citas/${citaId}/confirmar`);
+      setCitas((prev) =>
+        prev.map((c) =>
+          c.id === citaId ? { ...c, estado: "confirmada" } : c
+        )
+      );
+    } catch (err) {
+      console.error("Error al confirmar cita:", err);
+      alert("No se pudo confirmar la cita.");
+    }
+  };
+
   if (loading) {
     return (
       <div className="text-center mt-5">
@@ -275,6 +296,7 @@ const AdminAppointments = () => {
           >
             <option value="">Todos los estados</option>
             <option value="pendiente">Pendiente</option>
+            <option value="confirmada">Confirmada</option>
             <option value="completada">Completada</option>
             <option value="cancelada">Cancelada</option>
           </select>
@@ -316,17 +338,23 @@ const AdminAppointments = () => {
 
                   <span
                     className={`badge ${
-                      cita.estado === "pendiente"
-                        ? "bg-warning text-dark"
-                        : cita.estado === "completada"
-                        ? "bg-success"
-                        : "bg-danger"
+                      ESTADO_BADGE_CLASS[cita.estado] || "bg-secondary"
                     } mt-2`}
                   >
                     {cita.estado}
                   </span>
 
                   <div className="mt-3 d-flex gap-2">
+                    {cita.estado === "pendiente" && (
+                      <Button
+                        variant="primary"
+                        size="sm"
+                        className="rounded-pill"
+                        onClick={() => handleConfirm(cita.id)}
+                      >
+                        Confirmar
+                      </Button>
+                    )}
                     <Button
                       variant="outline-primary"
                       size="sm"

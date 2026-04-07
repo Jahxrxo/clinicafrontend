@@ -1,5 +1,6 @@
 import React, { useState, useContext, useEffect } from "react";
 import axios from "axios";
+import DatePicker from "react-datepicker";
 import { AuthContext } from "../../context/AuthContext";
 
 const ScheduleAppointment = () => {
@@ -20,6 +21,20 @@ const ScheduleAppointment = () => {
   const formatFecha = (fechaIso) => {
     const [y, m, d] = fechaIso.split("-");
     return `${d}/${m}/${y}`;
+  };
+
+  const parseFecha = (fechaIso) => {
+    if (!fechaIso) return null;
+    const [y, m, d] = fechaIso.split("-").map(Number);
+    return new Date(y, m - 1, d, 12, 0, 0);
+  };
+
+  const toFechaIso = (date) => {
+    if (!(date instanceof Date) || Number.isNaN(date.getTime())) return "";
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(
+      2,
+      "0"
+    )}-${String(date.getDate()).padStart(2, "0")}`;
   };
 
   const getFechaRegreso = (fechaFinIso) => {
@@ -59,6 +74,19 @@ const ScheduleAppointment = () => {
     )}.`;
   };
 
+  const fechasDisponibles = sucursal
+    ? [
+        ...new Set(
+          disponibilidad
+            .filter((d) => String(d.sucursal_id) === String(sucursal))
+            .map((d) => d.fecha)
+            .filter((fechaDisponible) => !getExcepcionParaFecha(fechaDisponible))
+        ),
+      ].sort()
+    : [];
+
+  const fechasDisponiblesDate = fechasDisponibles.map(parseFecha).filter(Boolean);
+
   // Cargar médicos
   useEffect(() => {
     axios.get(`${backendUrl}/medicos`)
@@ -91,13 +119,6 @@ const ScheduleAppointment = () => {
           );
 
         setSucursales(sucursalesUnicas);
-
-        if (!sucursalesUnicas.some(s => s.id === sucursal)) {
-          setSucursal("");
-        }
-
-        setFecha("");
-        setHora("");
       })
       .catch(err => console.error("Error al cargar disponibilidad:", err));
 
@@ -128,10 +149,24 @@ const ScheduleAppointment = () => {
     }
   }, [fecha, medico, excepciones]);
 
+  useEffect(() => {
+    if (!sucursal) {
+      setFecha("");
+      setHora("");
+      return;
+    }
+
+    if (fecha && !fechasDisponibles.includes(fecha)) {
+      setFecha("");
+      setHora("");
+      setMessage("No hay disponibilidad para la fecha seleccionada en esa sucursal.");
+    }
+  }, [sucursal, fecha, fechasDisponibles]);
+
   // Filtrar horas disponibles según fecha y sucursal
   const horasDisponibles = fecha && sucursal && !getExcepcionParaFecha(fecha)
     ? disponibilidad
-        .filter(d => d.fecha === fecha && d.sucursal_id === sucursal)
+        .filter(d => d.fecha === fecha && String(d.sucursal_id) === String(sucursal))
         .flatMap(d => d.horas_disponibles)
     : [];
 
@@ -206,7 +241,10 @@ const ScheduleAppointment = () => {
           <select
             className="form-control"
             value={sucursal}
-            onChange={(e) => setSucursal(e.target.value)}
+            onChange={(e) => {
+              setSucursal(e.target.value);
+              setMessage("");
+            }}
             required
           >
             <option value="">Selecciona una sucursal</option>
@@ -219,14 +257,41 @@ const ScheduleAppointment = () => {
         {/* Fecha */}
         <div className="mb-3">
           <label>Fecha</label>
-          <input
-            type="date"
+          <DatePicker
+            selected={parseFecha(fecha)}
+            onChange={(date) => {
+              const fechaSeleccionada = toFechaIso(date);
+
+              if (fechaSeleccionada && !fechasDisponibles.includes(fechaSeleccionada)) {
+                setFecha("");
+                setHora("");
+                setMessage("No hay disponibilidad para la fecha seleccionada en esa sucursal.");
+                return;
+              }
+
+              setFecha(fechaSeleccionada);
+              setHora("");
+              setMessage("");
+            }}
+            includeDates={fechasDisponiblesDate}
+            dateFormat="dd/MM/yyyy"
+            placeholderText={
+              !sucursal
+                ? "Selecciona una sucursal primero"
+                : fechasDisponibles.length === 0
+                ? "No hay fechas disponibles para esta sucursal"
+                : "Selecciona una fecha"
+            }
+            disabled={!sucursal || fechasDisponibles.length === 0}
             className="form-control"
-            value={fecha}
-            onChange={(e) => setFecha(e.target.value)}
-            required
-            min={new Date().toISOString().split("T")[0]}
+            minDate={new Date()}
+            autoComplete="off"
           />
+          {sucursal && fechasDisponibles.length === 0 && (
+            <div className="alert alert-warning mt-2" role="alert">
+              No hay disponibilidad de fechas para la sucursal seleccionada.
+            </div>
+          )}
           {warningMessage && (
             <div className="alert alert-warning mt-2" role="alert">
               ⚠️ {warningMessage}

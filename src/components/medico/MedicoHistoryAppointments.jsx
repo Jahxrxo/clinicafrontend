@@ -3,6 +3,8 @@ import axios from "axios";
 import MedicoAppointmentCard from "./MedicoAppointmentCard";
 import { backendUrl } from "../../services/api";
 
+const ESTADOS_ACTIVOS = ["pendiente", "confirmada"];
+
 const MedicoHistoryAppointments = ({ medicoId }) => {
   const [historial, setHistorial] = useState([]);
   const [filtro, setFiltro] = useState("todas");
@@ -12,7 +14,7 @@ const MedicoHistoryAppointments = ({ medicoId }) => {
     const fetchHistorial = async () => {
       try {
         const res = await axios.get(`${backendUrl}/citas/medico/${medicoId}`);
-        setHistorial(res.data.filter(c => c.estado !== "pendiente"));
+        setHistorial(res.data.filter(c => !ESTADOS_ACTIVOS.includes(c.estado)));
       } catch (err) {
         console.error("Error al obtener historial:", err);
       }

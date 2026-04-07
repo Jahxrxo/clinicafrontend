@@ -27,7 +27,7 @@ const SecretariatPanel = () => {
             case "pacientes":
                 return <AdminPacientes />;
             case "medicos":
-                return <AdminMedicos />;
+                return <AdminMedicos showAddButton={false} />;
             default:
                 return <AdminCitas />;
         }

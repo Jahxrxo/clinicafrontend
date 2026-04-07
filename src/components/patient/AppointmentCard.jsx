@@ -1,6 +1,13 @@
 import React from "react";
 import axios from "axios";
 
+const ESTADO_BADGE_CLASS = {
+  pendiente: "bg-warning text-dark",
+  confirmada: "bg-primary",
+  cancelada: "bg-danger",
+  completada: "bg-success",
+};
+
 const AppointmentCard = ({ cita, onCancel }) => {
   const backendUrl = "http://localhost:8000";
 
@@ -27,13 +34,7 @@ const AppointmentCard = ({ cita, onCancel }) => {
       <p>
         <strong>Estado: </strong>
         <span
-          className={`badge ${
-            cita.estado === "pendiente"
-              ? "bg-warning text-dark"
-              : cita.estado === "cancelada"
-              ? "bg-danger"
-              : "bg-success"
-          }`}
+          className={`badge ${ESTADO_BADGE_CLASS[cita.estado] || "bg-secondary"}`}
         >
           {cita.estado}
         </span>

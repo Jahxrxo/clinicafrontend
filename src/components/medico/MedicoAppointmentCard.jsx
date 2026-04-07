@@ -1,6 +1,14 @@
 import React from "react";
 import axios from "axios";
 import { backendUrl } from "../../services/api";
+
+const ESTADO_BADGE_CLASS = {
+    pendiente: "bg-warning text-dark",
+    confirmada: "bg-primary",
+    cancelada: "bg-danger",
+    completada: "bg-success",
+};
+
 const MedicoAppointmentCard = ({ cita, onUpdate }) => {
 
 
@@ -37,12 +45,7 @@ const MedicoAppointmentCard = ({ cita, onUpdate }) => {
             <p>
                 <strong>Estado: </strong>
                 <span
-                    className={`badge ${cita.estado === "pendiente"
-                            ? "bg-warning text-dark"
-                            : cita.estado === "cancelada"
-                                ? "bg-danger"
-                                : "bg-success"
-                        }`}
+                    className={`badge ${ESTADO_BADGE_CLASS[cita.estado] || "bg-secondary"}`}
                 >
                     {cita.estado}
                 </span>
@@ -52,7 +55,7 @@ const MedicoAppointmentCard = ({ cita, onUpdate }) => {
                 <p><strong>Comentarios:</strong> {cita.comentarios}</p>
             )}
 
-            {cita.estado === "pendiente" && (
+            {(cita.estado === "pendiente" || cita.estado === "confirmada") && (
                 <div className="d-flex gap-2 mt-2">
                     <button className="btn btn-danger" onClick={handleCancel}>
                         Cancelar

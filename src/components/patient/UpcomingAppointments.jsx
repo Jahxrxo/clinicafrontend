@@ -56,15 +56,21 @@ const UpcomingAppointments = () => {
         >
           Todas
         </button>
-        <button
-          className={`btn me-2 ${filtro === "pendiente" ? "btn-warning" : "btn-outline-warning"}`}
-          onClick={() => setFiltro("pendiente")}
-        >
-          Pendientes
-        </button>
-        <button
-          className={`btn me-2 ${filtro === "completada" ? "btn-success" : "btn-outline-success"}`}
-          onClick={() => setFiltro("completada")}
+        <button
+          className={`btn me-2 ${filtro === "pendiente" ? "btn-warning" : "btn-outline-warning"}`}
+          onClick={() => setFiltro("pendiente")}
+        >
+          Pendientes
+        </button>
+        <button
+          className={`btn me-2 ${filtro === "confirmada" ? "btn-primary" : "btn-outline-primary"}`}
+          onClick={() => setFiltro("confirmada")}
+        >
+          Confirmadas
+        </button>
+        <button
+          className={`btn me-2 ${filtro === "completada" ? "btn-success" : "btn-outline-success"}`}
+          onClick={() => setFiltro("completada")}
         >
           Completadas
         </button>

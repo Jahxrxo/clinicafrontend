@@ -3,15 +3,18 @@ import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import ScheduleAppointment from "../components/patient/ScheduleAppointment";
 import UpcomingAppointments from "../components/patient/UpcomingAppointments";
+import AvailableDoctors from "../components/patient/AvailableDoctors";
 
 const NAV = [
   { key: "dashboard", label: "Inicio",         emoji: "🏠" },
+  { key: "doctors",   label: "Médicos",        emoji: "🩺" },
   { key: "schedule",  label: "Agendar Cita",   emoji: "📅" },
   { key: "history",   label: "Próximas Citas",  emoji: "🗓️" },
 ];
 
 const TITLES = {
   dashboard: "Panel del Paciente",
+  doctors:   "Médicos Disponibles",
   schedule:  "Agendar Nueva Cita",
   history:   "Próximas Citas",
 };
@@ -29,7 +32,8 @@ const Dashboard = ({ user, setView }) => (
     </div>
 
     <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16 }}>
-      {[
+      {[ 
+        { key: "doctors",   label: "Ver Médicos Disponibles", desc: "Explora el directorio médico de la clínica", emoji: "🩺", color: "#036b6b", bg: "#036b6b15" },
         { key: "schedule", label: "Agendar Nueva Cita", desc: "Reserva tu próxima consulta médica", emoji: "📅", color: "#ffae00", bg: "#ffae0015" },
         { key: "history",  label: "Ver Próximas Citas",  desc: "Consulta tus citas programadas",     emoji: "🗓️", color: "#0aa4a4", bg: "#0aa4a415" },
       ].map(item => (
@@ -71,6 +75,7 @@ export default function PatientPanel() {
 
   const renderView = () => {
     switch (view) {
+      case "doctors":  return <AvailableDoctors />;
       case "schedule": return <ScheduleAppointment />;
       case "history":  return <UpcomingAppointments />;
       default:         return <Dashboard user={user} setView={setView} />;
