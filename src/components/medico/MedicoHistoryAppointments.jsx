@@ -8,6 +8,7 @@ const ESTADOS_ACTIVOS = ["pendiente", "confirmada"];
 const MedicoHistoryAppointments = ({ medicoId }) => {
   const [historial, setHistorial] = useState([]);
   const [filtro, setFiltro] = useState("todas");
+  const [busqueda, setBusqueda] = useState("");
 
 
   useEffect(() => {
@@ -23,13 +24,36 @@ const MedicoHistoryAppointments = ({ medicoId }) => {
   }, [medicoId]);
 
   const historialFiltrado = historial.filter(cita => {
-    if (filtro === "todas") return true;
-    return cita.estado === filtro;
+    const coincideEstado = filtro === "todas" ? true : cita.estado === filtro;
+    const coincideBusqueda = (cita.paciente_nombre || "")
+      .toLowerCase()
+      .includes(busqueda.trim().toLowerCase());
+
+    return coincideEstado && coincideBusqueda;
   });
 
   return (
     <div>
       <h4>Historial de Citas</h4>
+      <div style={{ marginBottom: 16 }}>
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar paciente"
+          style={{
+            width: "100%",
+            maxWidth: 420,
+            padding: "11px 14px",
+            borderRadius: 10,
+            border: "1px solid #cfe8e8",
+            background: "#fff",
+            color: "#022c30",
+            outline: "none",
+            boxShadow: "0 1px 4px rgba(0,0,0,.04)",
+          }}
+        />
+      </div>
       <div className="mb-3">
         <button
           className={`btn me-2 ${filtro === "todas" ? "btn-dark" : "btn-outline-dark"}`}
@@ -52,7 +76,9 @@ const MedicoHistoryAppointments = ({ medicoId }) => {
       </div>
 
       {historialFiltrado.length === 0 ? (
-        <p className="text-muted">No hay citas en esta categoría.</p>
+        <p className="text-muted">
+          {busqueda.trim() ? "No se encontraron pacientes con ese nombre." : "No hay citas en esta categoría."}
+        </p>
       ) : (
         historialFiltrado.map(cita => (
           <MedicoAppointmentCard

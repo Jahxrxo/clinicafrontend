@@ -8,6 +8,7 @@ const ESTADOS_ACTIVOS = ["pendiente", "confirmada"];
 const MedicoUpcomingAppointments = ({ medicoId }) => {
     const [citas, setCitas]     = useState([]);
     const [loading, setLoading] = useState(true);
+    const [busqueda, setBusqueda] = useState("");
 
     useEffect(() => {
         const fetchCitas = async () => {
@@ -28,9 +29,35 @@ const MedicoUpcomingAppointments = ({ medicoId }) => {
         setCitas(prev => prev.filter(c => c.id !== id));
     };
 
+    const citasFiltradas = citas.filter((cita) =>
+        (cita.paciente_nombre || "")
+            .toLowerCase()
+            .includes(busqueda.trim().toLowerCase())
+    );
+
     return (
         <div>
             <h4 style={{ color: "#022c30", fontWeight: 700, marginBottom: 20 }}>Citas Activas</h4>
+
+            <div style={{ marginBottom: 20 }}>
+                <input
+                    type="text"
+                    value={busqueda}
+                    onChange={(e) => setBusqueda(e.target.value)}
+                    placeholder="Buscar paciente"
+                    style={{
+                        width: "100%",
+                        maxWidth: 420,
+                        padding: "11px 14px",
+                        borderRadius: 10,
+                        border: "1px solid #cfe8e8",
+                        background: "#fff",
+                        color: "#022c30",
+                        outline: "none",
+                        boxShadow: "0 1px 4px rgba(0,0,0,.04)",
+                    }}
+                />
+            </div>
 
             {loading ? (
                 <div style={{
@@ -56,8 +83,17 @@ const MedicoUpcomingAppointments = ({ medicoId }) => {
                     <div style={{ fontSize: 40, marginBottom: 12 }}>📭</div>
                     No tienes citas activas.
                 </div>
+            ) : citasFiltradas.length === 0 ? (
+                <div style={{
+                    textAlign: "center", padding: "40px 20px",
+                    color: "#7a9a9a", fontSize: 14,
+                    background: "#f9fefe", borderRadius: 12,
+                    border: "1px dashed #c8e8e8",
+                }}>
+                    No se encontraron pacientes con ese nombre.
+                </div>
             ) : (
-                citas.map(cita => (
+                citasFiltradas.map(cita => (
                     <MedicoAppointmentCard
                         key={cita.id}
                         cita={{ ...cita, paciente: cita.paciente_nombre }}

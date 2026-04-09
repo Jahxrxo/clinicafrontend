@@ -352,6 +352,7 @@ const MedicoReagendar = ({ medicoId }) => {
   const [excepciones, setExcepciones] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [busqueda, setBusqueda] = useState("");
 
   useEffect(() => {
     const fetchTodo = async () => {
@@ -383,6 +384,12 @@ const MedicoReagendar = ({ medicoId }) => {
     .filter((e) => e.fecha_fin >= hoy)
     .sort((a, b) => a.fecha_inicio.localeCompare(b.fecha_inicio));
 
+  const citasFiltradas = citas.filter((cita) =>
+    (cita.paciente_nombre || "")
+      .toLowerCase()
+      .includes(busqueda.trim().toLowerCase())
+  );
+
   return (
     <div>
       <h4 style={{ color: "#022c30", fontWeight: 800, marginBottom: 4 }}>
@@ -391,6 +398,26 @@ const MedicoReagendar = ({ medicoId }) => {
       <p style={{ color: "#7a9a9a", fontSize: 13, marginBottom: 22 }}>
         Selecciona una cita pendiente o confirmada y elige un nuevo horario disponible.
       </p>
+
+      <div style={{ marginBottom: 20 }}>
+        <input
+          type="text"
+          value={busqueda}
+          onChange={(e) => setBusqueda(e.target.value)}
+          placeholder="Buscar paciente"
+          style={{
+            width: "100%",
+            maxWidth: 420,
+            padding: "11px 14px",
+            borderRadius: 10,
+            border: "1px solid #cfe8e8",
+            background: "#fff",
+            color: "#022c30",
+            outline: "none",
+            boxShadow: "0 1px 4px rgba(0,0,0,.04)",
+          }}
+        />
+      </div>
 
       {/* ── Banner de excepciones activas/futuras ── */}
       {excepcionesVisibles.length > 0 && (
@@ -468,12 +495,21 @@ const MedicoReagendar = ({ medicoId }) => {
           <div style={{ fontWeight: 700, color: "#8aabab", marginBottom: 4 }}>Sin citas activas</div>
           No tienes citas disponibles para reagendar.
         </div>
+      ) : citasFiltradas.length === 0 ? (
+        <div style={{
+          textAlign: "center", padding: "40px 20px",
+          color: "#7a9a9a", fontSize: 14,
+          background: "#f9fefe", borderRadius: 14,
+          border: "1.5px dashed #c8e8e8",
+        }}>
+          No se encontraron pacientes con ese nombre.
+        </div>
       ) : (
         <div>
           <div style={{ fontSize: 13, color: "#7a9a9a", marginBottom: 14 }}>
-            {citas.length} cita{citas.length !== 1 ? "s" : ""} activa{citas.length !== 1 ? "s" : ""}
+            {citasFiltradas.length} cita{citasFiltradas.length !== 1 ? "s" : ""} activa{citasFiltradas.length !== 1 ? "s" : ""}
           </div>
-          {citas.map((cita) => (
+          {citasFiltradas.map((cita) => (
             <CitaCard
               key={cita.id}
               cita={cita}
