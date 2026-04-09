@@ -2,6 +2,7 @@ import React, { useState, useContext, useEffect } from "react";
 import axios from "axios";
 import DatePicker from "react-datepicker";
 import { AuthContext } from "../../context/AuthContext";
+import { backendUrl } from "../../services/api";
 
 const ScheduleAppointment = () => {
   const { user } = useContext(AuthContext);
@@ -13,10 +14,10 @@ const ScheduleAppointment = () => {
   const [hora, setHora] = useState("");
   const [disponibilidad, setDisponibilidad] = useState([]);
   const [excepciones, setExcepciones] = useState([]);
+  const [citasMedico, setCitasMedico] = useState([]);
+  const [citasPaciente, setCitasPaciente] = useState([]);
   const [message, setMessage] = useState("");
   const [warningMessage, setWarningMessage] = useState("");
-
-  const backendUrl = "http://localhost:8000";
 
   const formatFecha = (fechaIso) => {
     const [y, m, d] = fechaIso.split("-");
@@ -47,6 +48,13 @@ const ScheduleAppointment = () => {
       )}-${String(regreso.getDate()).padStart(2, "0")}`
     );
   };
+
+  const normalizeHora = (horaValue) => {
+    if (!horaValue) return "";
+    return String(horaValue).slice(0, 5);
+  };
+
+  const isCitaActiva = (estado) => ["pendiente", "confirmada"].includes(estado);
 
   const getExcepcionParaFecha = (fechaIso) => {
     if (!fechaIso) return null;
@@ -86,6 +94,9 @@ const ScheduleAppointment = () => {
     : [];
 
   const fechasDisponiblesDate = fechasDisponibles.map(parseFecha).filter(Boolean);
+  const sucursalSeleccionada = sucursales.find(
+    (sucursalOption) => String(sucursalOption.id) === String(sucursal)
+  );
 
   // Cargar médicos
   useEffect(() => {
@@ -94,12 +105,29 @@ const ScheduleAppointment = () => {
       .catch(err => console.error("Error al cargar médicos:", err));
   }, []);
 
+  useEffect(() => {
+    if (!user?.id) {
+      setCitasPaciente([]);
+      return;
+    }
+
+    axios.get(`${backendUrl}/citas/historial/${user.id}`)
+      .then((res) => {
+        setCitasPaciente(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error("Error al cargar citas del paciente:", err);
+        setCitasPaciente([]);
+      });
+  }, [user?.id]);
+
   // Al cambiar médico, cargar disponibilidad, sucursales y excepciones
   useEffect(() => {
     if (!medico) {
       setDisponibilidad([]);
       setSucursales([]);
       setExcepciones([]);
+      setCitasMedico([]);
       setSucursal("");
       setFecha("");
       setHora("");
@@ -130,6 +158,15 @@ const ScheduleAppointment = () => {
       .catch(err => {
         console.error("Error al cargar excepciones:", err);
         setExcepciones([]);
+      });
+
+    axios.get(`${backendUrl}/citas/medico/${medico}`)
+      .then((res) => {
+        setCitasMedico(Array.isArray(res.data) ? res.data : []);
+      })
+      .catch((err) => {
+        console.error("Error al cargar citas del médico:", err);
+        setCitasMedico([]);
       });
   }, [medico]);
 
@@ -164,11 +201,49 @@ const ScheduleAppointment = () => {
   }, [sucursal, fecha, fechasDisponibles]);
 
   // Filtrar horas disponibles según fecha y sucursal
+  const horasOcupadas = fecha && sucursal
+    ? new Set(
+        citasMedico
+          .filter((cita) => {
+            const mismaFecha = cita.fecha === fecha;
+            const mismaSucursal =
+              String(cita.sucursal_id) === String(sucursal) ||
+              String(cita.sucursal) === String(sucursal) ||
+              String(cita.sucursal) === String(sucursalSeleccionada?.sucursal_nombre);
+            return mismaFecha && mismaSucursal && isCitaActiva(cita.estado);
+          })
+          .map((cita) => normalizeHora(cita.hora))
+      )
+    : new Set();
+
+  const horasPacienteOcupadas = fecha
+    ? new Set(
+        citasPaciente
+          .filter(
+            (cita) => cita.fecha === fecha && isCitaActiva(cita.estado)
+          )
+          .map((cita) => normalizeHora(cita.hora))
+      )
+    : new Set();
+
   const horasDisponibles = fecha && sucursal && !getExcepcionParaFecha(fecha)
     ? disponibilidad
         .filter(d => d.fecha === fecha && String(d.sucursal_id) === String(sucursal))
         .flatMap(d => d.horas_disponibles)
+        .map(normalizeHora)
+        .filter((horaDisponible, index, horas) =>
+          horaDisponible &&
+          !horasOcupadas.has(horaDisponible) &&
+          !horasPacienteOcupadas.has(horaDisponible) &&
+          horas.indexOf(horaDisponible) === index
+        )
     : [];
+
+  useEffect(() => {
+    if (hora && !horasDisponibles.includes(normalizeHora(hora))) {
+      setHora("");
+    }
+  }, [hora, horasDisponibles]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -204,10 +279,21 @@ const ScheduleAppointment = () => {
       setDisponibilidad([]);
       setSucursales([]);
       setExcepciones([]);
+      setCitasPaciente((prev) => [
+        ...prev,
+        {
+          fecha,
+          hora,
+          estado: "pendiente",
+        },
+      ]);
       setWarningMessage("");
     } catch (err) {
       const errorMsg = err.response?.data?.error;
-      if (errorMsg?.includes("no está disponible")) {
+      if (
+        errorMsg?.includes("no está disponible") ||
+        errorMsg?.includes("ya tiene una cita")
+      ) {
         setMessage("El médico ya tiene una cita pendiente en esa fecha, hora y sucursal seleccionadas");
       } else {
         setMessage(errorMsg || "Error al agendar cita");

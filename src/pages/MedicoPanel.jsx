@@ -78,7 +78,7 @@ export default function MedicoPanel() {
           }}>🏥</div>
           {sb && (
             <span style={{ fontWeight: 800, fontSize: 18, color: "#fff", letterSpacing: "-.5px", whiteSpace: "nowrap" }}>
-              Clinic<span style={{ color: "#ffae00" }}>Hub</span>
+              Buena<span style={{ color: "#ffae00" }}>Salud</span>
             </span>
           )}
         </div>

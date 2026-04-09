@@ -382,7 +382,7 @@ export default function AdminPanel() {
             <Activity size={18} color="#fff"/>
           </div>
           {sidebarOpen && <span style={{ fontWeight:800,fontSize:17,color:"#fff",letterSpacing:"-0.5px" }}>
-            Clinic<span style={{color:"#ffae00"}}>Hub</span>
+            Buena<span style={{color:"#ffae00"}}>Salud</span>
           </span>}
         </div>
 
@@ -448,9 +448,9 @@ export default function AdminPanel() {
                            display:"flex",alignItems:"center",justifyContent:"center",fontWeight:700 }}>A</div>
             <div>
               <div style={{ fontWeight: 600, fontSize: 13, color: "#022c30", lineHeight: 1.2 }}>
-                Admin {user?.nombre}
+                 {user?.nombre}
               </div>
-              <div style={{ fontSize:11,color:"#aaa" }}>Admin</div>
+              <div style={{ fontSize:11,color:"#aaa" }}>Administrador</div>
             </div>
           </div>
         </div>

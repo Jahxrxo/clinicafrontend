@@ -146,7 +146,7 @@ const Register = ({ hideTitle = false }) => {
                     {passwordStrength && <small className="text-muted">Contraseña: {passwordStrength}</small>}
                 </div>
 
-                {/* Sucursal */}
+                {/* Sucursal 
                 <div className="mb-3">
                     <label className="form-label fw-bold" style={{ color: "var(--clr-dark)" }}>Sucursal</label>
                     <select 
@@ -158,7 +158,7 @@ const Register = ({ hideTitle = false }) => {
                     >
                         {sucursalesOptions.map((s) => <option key={s.id} value={s.id}>{s.nombre}</option>)}
                     </select>
-                </div>
+                </div>*/}
 
                 {/* Teléfono */}
                 <div className="mb-3">
@@ -172,7 +172,7 @@ const Register = ({ hideTitle = false }) => {
                     />
                 </div>
 
-                {/* Foto */}
+                {/* Commented out Foto section
                 <div className="mb-4">
                     <label className="form-label fw-bold" style={{ color: "var(--clr-dark)" }}>Foto de Perfil</label>
                     <input 
@@ -183,6 +183,7 @@ const Register = ({ hideTitle = false }) => {
                         style={{ borderRadius: '8px', padding: '10px' }}
                     />
                 </div>
+                */}
 
                 {message && <p className="mt-3 text-center text-danger">{message}</p>}
 

@@ -124,7 +124,7 @@ const MedicoExcepciones = ({ medicoId }) => {
         <button
           className="btn btn-pill px-4"
           style={{
-            background: showForm ? "#e74c3c" : "var(--clr-primary)",
+            background: showForm ? "#e74c3c" : "#035556",
             border: "none",
             color: "#fff",
             borderRadius: 50,
@@ -219,7 +219,7 @@ const MedicoExcepciones = ({ medicoId }) => {
                 className="btn px-4"
                 disabled={guardando}
                 style={{
-                  background: "var(--clr-primary)",
+                  background: "#035556",
                   color: "#fff",
                   borderRadius: 50,
                   fontWeight: 600,

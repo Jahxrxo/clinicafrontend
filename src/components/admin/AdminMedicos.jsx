@@ -112,7 +112,7 @@ const AdminMedicos = ({ showAddButton = true }) => {
                         variant="primary"
                         className="d-flex align-items-center gap-2"
                         onClick={handleShowModal}
-                        style={{ borderRadius: '50px' }}
+                        style={{ borderRadius: '50px', background: '#035556', borderColor: '#035556' }}
                     >
                         <Plus size={18} />
                         Agregar Médico
@@ -215,7 +215,7 @@ const AdminMedicos = ({ showAddButton = true }) => {
                                     ))}
                                 </Form.Select>
                             </Form.Group>
-
+                            {/*         
                             <Form.Group className="mb-4">
                                 <Form.Label className="fw-bold">Foto de Perfil</Form.Label>
                                 <Form.Control
@@ -228,7 +228,7 @@ const AdminMedicos = ({ showAddButton = true }) => {
                                 <Form.Text className="text-muted">
                                     Opcional - Formatos: JPG, PNG, GIF
                                 </Form.Text>
-                            </Form.Group>
+                            </Form.Group>*/}
 
                             <div className="d-flex gap-2 justify-content-end">
                                 <Button
